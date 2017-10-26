@@ -62,3 +62,13 @@ RUN wget https://github.com/opencv/opencv/archive/3.3.0.zip \
 	&& make install \
 	&& rm /3.3.0.zip \
 	&& rm -r /opencv-3.3.0
+
+RUN apt-get install -y protobuf-compiler python-pil python-lxml python3-tk
+RUN pip install jupyter
+RUN pip install matplotlib
+
+RUN git clone https://github.com/tensorflow/models.git
+WORKDIR /models/research/
+RUN protoc object_detection/protos/*.proto --python_out=.
+ENV PYTHONPATH=${PYTHONPATH}:/models/research/:/models/research/slim
+RUN python3 object_detection/builders/model_builder_test.py
