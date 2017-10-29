@@ -13,13 +13,13 @@ from utils import label_map_util
 from utils import visualization_utils as vis_util
 from slackclient import SlackClient
 
-MODEL_NAME = 'ssd_mobilenet_v1_coco_11_06_2017'
+MODEL_NAME = 'ssd_inception_v2_coco_11_06_2017'
 # Path to frozen detection graph. This is the actual model that is used for the object detection.
-PATH_TO_CKPT = MODEL_NAME + '/frozen_inference_graph.pb'
+PATH_TO_CKPT = '/model_zoo/' + MODEL_NAME + '/frozen_inference_graph.pb'
 # List of the strings that is used to add correct label for each box.
 PATH_TO_LABELS = os.path.join('/models/research/object_detection', 'data', 'mscoco_label_map.pbtxt')
 NUM_CLASSES = 90
-MIN_SCORE_THRESH = 0.5
+MIN_SCORE_THRESH = 0.6
 
 label_map = label_map_util.load_labelmap(PATH_TO_LABELS)
 categories = label_map_util.convert_label_map_to_categories(label_map, max_num_classes=NUM_CLASSES, use_display_name=True)

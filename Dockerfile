@@ -76,7 +76,12 @@ RUN python3 object_detection/builders/model_builder_test.py
 RUN pip install slackclient
 
 COPY src/app.py /root/
-COPY src/ssd_mobilenet_v1_coco_11_06_2017 /root/ssd_mobilenet_v1_coco_11_06_2017
+
+RUN mkdir /model_zeoo
+WORKDIR /model_zoo
+RUN wget http://download.tensorflow.org/models/object_detection/ssd_inception_v2_coco_11_06_2017.tar.gz
+RUN tar -xvzf ssd_inception_v2_coco_11_06_2017.tar.gz
+RUN rm -rf ssd_inception_v2_coco_11_06_2017.tar.gz
 
 WORKDIR /root
 CMD python3 app.py \
