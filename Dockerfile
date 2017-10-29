@@ -72,3 +72,5 @@ WORKDIR /models/research/
 RUN protoc object_detection/protos/*.proto --python_out=.
 ENV PYTHONPATH=${PYTHONPATH}:/models/research/:/models/research/slim
 RUN python3 object_detection/builders/model_builder_test.py
+
+RUN pip install slackclient
