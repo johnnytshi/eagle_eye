@@ -74,3 +74,12 @@ ENV PYTHONPATH=${PYTHONPATH}:/models/research/:/models/research/slim
 RUN python3 object_detection/builders/model_builder_test.py
 
 RUN pip install slackclient
+
+COPY src/app.py /root/
+COPY src/ssd_mobilenet_v1_coco_11_06_2017 /root/ssd_mobilenet_v1_coco_11_06_2017
+
+WORKDIR /root
+CMD python3 app.py \
+    --source=$SOURCE \
+    --slack_token=$SLACK_TOKEN \
+    --slack_channel=$SLACK_CHANNEL
