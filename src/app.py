@@ -39,6 +39,7 @@ def detect_objects(output_q, image_np, sess, image_tensor, boxes, scores, classe
         if val > MIN_SCORE_THRESH:
             break
     else:
+        print("NO object detected")
         return
 
     print("Object detected")
@@ -115,9 +116,13 @@ if __name__ == '__main__':
     input_pool = Pool(2, input_worker, (input_q, output_q))
     output_pool = Pool(1, output_worker, (output_q, args.slack_token, args.slack_channel))
 
-    video_capture = cv2.VideoCapture(args.video_source)
+    video_capture = cv2.VideoCapture()
     frame_counter = 0;
     while(1):
+        while not video_capture.isOpened():
+            print('Opening the video stream')
+            video_capture.open(args.video_source)
+
         ret, frame = video_capture.read()
 
         if frame_counter%20 == 0:
