@@ -130,6 +130,8 @@ if __name__ == '__main__':
                 input_q.put(frame)
             frame_counter += 1
 
+        cv2.waitKey(1)
+
         if 0xFF == ord('q'):
             break
 
