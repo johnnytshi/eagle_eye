@@ -19,7 +19,7 @@ PATH_TO_CKPT = '/model_zoo/' + MODEL_NAME + '/frozen_inference_graph.pb'
 # List of the strings that is used to add correct label for each box.
 PATH_TO_LABELS = os.path.join('/models/research/object_detection', 'data', 'mscoco_label_map.pbtxt')
 NUM_CLASSES = 90
-MIN_SCORE_THRESH = 0.6
+MIN_SCORE_THRESH = 0.7
 
 label_map = label_map_util.load_labelmap(PATH_TO_LABELS)
 categories = label_map_util.convert_label_map_to_categories(label_map, max_num_classes=NUM_CLASSES, use_display_name=True)
@@ -116,7 +116,7 @@ if __name__ == '__main__':
     input_pool = Pool(2, input_worker, (input_q, output_q))
     output_pool = Pool(1, output_worker, (output_q, args.slack_token, args.slack_channel))
 
-    video_capture = cv2.VideoCapture()
+    video_capture = cv2.VideoCapture(args.video_source)
     frame_counter = 0;
     while(1):
         while not video_capture.isOpened():
@@ -125,9 +125,10 @@ if __name__ == '__main__':
 
         ret, frame = video_capture.read()
 
-        if frame_counter%20 == 0:
-            input_q.put(frame)
-        frame_counter += 1
+        if ret:
+            if frame_counter%20 == 0:
+                input_q.put(frame)
+            frame_counter += 1
 
         if 0xFF == ord('q'):
             break
