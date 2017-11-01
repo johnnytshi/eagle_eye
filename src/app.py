@@ -127,7 +127,7 @@ if __name__ == '__main__':
 
         if ret:
             input_q.put(frame)
-        time.sleep(.1)
+        time.sleep(.3)
 
         if 0xFF == ord('q'):
             break
