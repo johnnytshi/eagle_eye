@@ -7,6 +7,7 @@ import cv2
 import multiprocessing
 from multiprocessing import Queue, Pool
 from collections import defaultdict
+import time
 
 sys.path.append('/models/research/object_detection/')
 from utils import label_map_util
@@ -117,7 +118,6 @@ if __name__ == '__main__':
     output_pool = Pool(1, output_worker, (output_q, args.slack_token, args.slack_channel))
 
     video_capture = cv2.VideoCapture(args.video_source)
-    frame_counter = 0;
     while(1):
         while not video_capture.isOpened():
             print('Opening the video stream')
@@ -126,9 +126,8 @@ if __name__ == '__main__':
         ret, frame = video_capture.read()
 
         if ret:
-            if frame_counter%20 == 0:
-                input_q.put(frame)
-            frame_counter += 1
+            input_q.put(frame)
+        time.sleep(.1)
 
         if 0xFF == ord('q'):
             break
