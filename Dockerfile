@@ -27,7 +27,12 @@ RUN apt-get install -y \
         libjasper-dev \
         libavformat-dev \
         libhdf5-dev \
-        libpq-dev
+        libpq-dev \
+	ffmpeg \
+	protobuf-compiler \
+	python-pil \
+	python-lxml \
+	python3-tk
 
 # Python dependencies
 RUN pip3 --no-cache-dir install \
@@ -35,7 +40,10 @@ RUN pip3 --no-cache-dir install \
     hdf5storage \
     h5py \
     scipy \
-    py3nvml
+    py3nvml \
+    jupyter \
+    matplotlib \
+    slackclient    
 
 WORKDIR /
 RUN wget https://github.com/opencv/opencv/archive/3.3.0.zip \
@@ -46,6 +54,7 @@ RUN wget https://github.com/opencv/opencv/archive/3.3.0.zip \
 		  -DBUILD_opencv_java=OFF \
 		  -DWITH_CUDA=OFF \
 		  -DENABLE_AVX=ON \
+                  -DWITH_FFMPEG=ON \
 		  -DWITH_OPENGL=ON \
 		  -DWITH_OPENCL=ON \
 		  -DWITH_IPP=ON \
@@ -63,17 +72,11 @@ RUN wget https://github.com/opencv/opencv/archive/3.3.0.zip \
 	&& rm /3.3.0.zip \
 	&& rm -r /opencv-3.3.0
 
-RUN apt-get install -y protobuf-compiler python-pil python-lxml python3-tk
-RUN pip install jupyter
-RUN pip install matplotlib
-
 RUN git clone https://github.com/tensorflow/models.git
 WORKDIR /models/research/
 RUN protoc object_detection/protos/*.proto --python_out=.
 ENV PYTHONPATH=${PYTHONPATH}:/models/research/:/models/research/slim
 #RUN python3 object_detection/builders/model_builder_test.py
-
-RUN pip install slackclient
 
 COPY src/app.py /root/
 
