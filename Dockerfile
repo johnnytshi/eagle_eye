@@ -43,7 +43,7 @@ RUN pip3 --no-cache-dir install \
     py3nvml \
     jupyter \
     matplotlib \
-    slackclient    
+    slackclient
 
 WORKDIR /
 RUN wget https://github.com/opencv/opencv/archive/3.3.0.zip \
@@ -89,4 +89,5 @@ WORKDIR /root
 CMD python3 app.py \
     --source=$SOURCE \
     --slack_token=$SLACK_TOKEN \
-    --slack_channel=$SLACK_CHANNEL
+    --slack_channel=$SLACK_CHANNEL \
+    --min_score_thresh=$MIN_SCORE_THRESH
