@@ -52,7 +52,7 @@ def detect_objects(output_q, image_np, sess, image_tensor, boxes, scores, classe
         scores_squeezed,
         category_index,
         use_normalized_coordinates=True,
-        min_score_thresh=MIN_SCORE_THRESH,
+        min_score_thresh=min_score_thresh,
         line_thickness=8)
     output_q.put(image_np)
 
