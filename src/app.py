@@ -7,7 +7,6 @@ import cv2
 import multiprocessing
 from multiprocessing import Queue, Pool
 from collections import defaultdict
-import time
 
 sys.path.append('/models/research/object_detection/')
 from utils import label_map_util
@@ -39,10 +38,7 @@ def detect_objects(output_q, image_np, sess, image_tensor, boxes, scores, classe
         if val >= min_score_thresh:
             break
     else:
-        print("NO object detected")
         return
-
-    print("Object detected")
 
     # Visualization of the results of a detection.
     vis_util.visualize_boxes_and_labels_on_image_array(
@@ -93,9 +89,7 @@ def output_worker(output_q, slack_token, slack_channel):
         cv2.imwrite("image.jpg", frame)
         in_file = open("image.jpg", "rb") # opening for [r]eading as [b]inary
         data = in_file.read()
-        print("Uploading to slack")
         ret = sc.api_call("files.upload", filename="image.jpg", channels=slack_channel, file=data)
-        print(ret)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -108,7 +102,6 @@ if __name__ == '__main__':
     parser.add_argument('-min_score_thresh', '--min_score_thresh', dest='min_score_thresh', type=float,
                         default=0.5, help='percentage as min confidence score')
     args = parser.parse_args()
-    print(args)
 
     logger = multiprocessing.log_to_stderr()
     logger.setLevel(multiprocessing.SUBDEBUG)
@@ -121,10 +114,11 @@ if __name__ == '__main__':
     video_capture = cv2.VideoCapture(args.video_source)
     while(1):
         ret, frame = video_capture.read()
-
+        frame_counter = 0
         if ret:
-            input_q.put(frame)
-        time.sleep(.2)
+            if frame_counter % 10 == 0:
+                input_q.put(frame)
+        frame_counter += 1
 
         if 0xFF == ord('q'):
             break
