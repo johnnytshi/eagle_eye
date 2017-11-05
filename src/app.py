@@ -4,8 +4,6 @@ import sys
 import tensorflow as tf
 import argparse
 import cv2
-import multiprocessing
-from multiprocessing import Queue, Pool
 from collections import defaultdict
 
 sys.path.append('/models/research/object_detection/')
@@ -24,7 +22,7 @@ label_map = label_map_util.load_labelmap(PATH_TO_LABELS)
 categories = label_map_util.convert_label_map_to_categories(label_map, max_num_classes=NUM_CLASSES, use_display_name=True)
 category_index = label_map_util.create_category_index(categories)
 
-def detect_objects(output_q, image_np, sess, image_tensor, boxes, scores, classes, num_detections, min_score_thresh):
+def detect_objects(image_np, sess, image_tensor, boxes, scores, classes, num_detections, min_score_thresh):
     # Expand dimensions since the model expects images to have shape: [1, None, None, 3]
     image_np_expanded = np.expand_dims(image_np, axis=0)
 
@@ -38,7 +36,7 @@ def detect_objects(output_q, image_np, sess, image_tensor, boxes, scores, classe
         if val >= min_score_thresh:
             break
     else:
-        return
+        return None
 
     # Visualization of the results of a detection.
     vis_util.visualize_boxes_and_labels_on_image_array(
@@ -50,10 +48,21 @@ def detect_objects(output_q, image_np, sess, image_tensor, boxes, scores, classe
         use_normalized_coordinates=True,
         min_score_thresh=min_score_thresh,
         line_thickness=8)
-    output_q.put(image_np)
+    return image_np
 
-def input_worker(input_q, output_q, min_score_thresh):
-    # Load a (frozen) Tensorflow model into memory.
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-src', '--source', dest='video_source', type=str,
+                        help='rtsp://admin:*@192.*.*.*:554/h264/ch1/main/av_stream')
+    parser.add_argument('-token', '--slack_token', dest='slack_token', type=str,
+                        help='Slack Web API Token')
+    parser.add_argument('-channel', '--slack_channel', dest='slack_channel', type=str,
+                        help='Slack Web API Token')
+    parser.add_argument('-min_score_thresh', '--min_score_thresh', dest='min_score_thresh', type=float,
+                        default=0.5, help='percentage as min confidence score')
+    args = parser.parse_args()
+
+    # init tensorflow
     detection_graph = tf.Graph()
     with detection_graph.as_default():
         od_graph_def = tf.GraphDef()
@@ -75,55 +84,26 @@ def input_worker(input_q, output_q, min_score_thresh):
     classes = detection_graph.get_tensor_by_name('detection_classes:0')
     num_detections = detection_graph.get_tensor_by_name('num_detections:0')
 
-    while True:
-        frame = input_q.get()
-        frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        detect_objects(output_q, frame_rgb, sess, image_tensor, boxes, scores, classes, num_detections, min_score_thresh)
-
-    sess.close()
-
-def output_worker(output_q, slack_token, slack_channel):
-    sc = SlackClient(slack_token)
-    while True:
-        frame = output_q.get()
-        cv2.imwrite("image.jpg", frame)
-        in_file = open("image.jpg", "rb") # opening for [r]eading as [b]inary
-        data = in_file.read()
-        ret = sc.api_call("files.upload", filename="image.jpg", channels=slack_channel, file=data)
-
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument('-src', '--source', dest='video_source', type=str,
-                        help='rtsp://admin:*@192.*.*.*:554/h264/ch1/main/av_stream')
-    parser.add_argument('-token', '--slack_token', dest='slack_token', type=str,
-                        help='Slack Web API Token')
-    parser.add_argument('-channel', '--slack_channel', dest='slack_channel', type=str,
-                        help='Slack Web API Token')
-    parser.add_argument('-min_score_thresh', '--min_score_thresh', dest='min_score_thresh', type=float,
-                        default=0.5, help='percentage as min confidence score')
-    args = parser.parse_args()
-
-    logger = multiprocessing.log_to_stderr()
-    logger.setLevel(multiprocessing.SUBDEBUG)
-
-    input_q = Queue(24)
-    output_q = Queue(24)
-    input_pool = Pool(2, input_worker, (input_q, output_q, args.min_score_thresh))
-    output_pool = Pool(1, output_worker, (output_q, args.slack_token, args.slack_channel))
-
+    # init OpenCV
     video_capture = cv2.VideoCapture(args.video_source)
+
+    # init Slack
+    sc = SlackClient(args.slack_token)
+
     while(1):
         ret, frame = video_capture.read()
-        frame_counter = 0
         if ret:
-            if frame_counter % 10 == 0:
-                input_q.put(frame)
-        frame_counter += 1
+            frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            object_detected = detect_objects(frame_rgb, sess, image_tensor, boxes, scores, classes, num_detections, args.min_score_thresh)
+
+            if object_detected:
+                cv2.imwrite("image.jpg", object_detected)
+                in_file = open("image.jpg", "rb") # opening for [r]eading as [b]inary
+                data = in_file.read()
+                sc.api_call("files.upload", filename="image.jpg", channels=args.slack_channel, file=data)
 
         if 0xFF == ord('q'):
             break
-
-    input_pool.terminate()
-    output_pool.terminate()
+    sess.close()
     video_capture.stop()
     cv2.destroyAllWindows()
