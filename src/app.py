@@ -36,7 +36,7 @@ def detect_objects(image_np, sess, image_tensor, boxes, scores, classes, num_det
         if val >= min_score_thresh:
             break
     else:
-        return None
+        return False
 
     # Visualization of the results of a detection.
     vis_util.visualize_boxes_and_labels_on_image_array(
@@ -48,7 +48,7 @@ def detect_objects(image_np, sess, image_tensor, boxes, scores, classes, num_det
         use_normalized_coordinates=True,
         min_score_thresh=min_score_thresh,
         line_thickness=8)
-    return image_np
+    return True
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -97,7 +97,7 @@ if __name__ == '__main__':
             object_detected = detect_objects(frame_rgb, sess, image_tensor, boxes, scores, classes, num_detections, args.min_score_thresh)
 
             if object_detected:
-                cv2.imwrite("image.jpg", object_detected)
+                cv2.imwrite("image.jpg", frame_rgb)
                 in_file = open("image.jpg", "rb") # opening for [r]eading as [b]inary
                 data = in_file.read()
                 sc.api_call("files.upload", filename="image.jpg", channels=args.slack_channel, file=data)
