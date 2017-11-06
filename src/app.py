@@ -11,7 +11,7 @@ from utils import label_map_util
 from utils import visualization_utils as vis_util
 from slackclient import SlackClient
 
-MODEL_NAME = 'ssd_inception_v2_coco_11_06_2017'
+MODEL_NAME = 'ssd_mobilenet_v1_coco_11_06_2017'
 # Path to frozen detection graph. This is the actual model that is used for the object detection.
 PATH_TO_CKPT = '/model_zoo/' + MODEL_NAME + '/frozen_inference_graph.pb'
 # List of the strings that is used to add correct label for each box.
