@@ -11,7 +11,7 @@ from utils import label_map_util
 from utils import visualization_utils as vis_util
 from slackclient import SlackClient
 
-MODEL_NAME = 'ssd_mobilenet_v1_coco_11_06_2017'
+MODEL_NAME = 'ssd_mobilenet_v1_coco_2017_11_17'
 # Path to frozen detection graph. This is the actual model that is used for the object detection.
 PATH_TO_CKPT = '/model_zoo/' + MODEL_NAME + '/frozen_inference_graph.pb'
 # List of the strings that is used to add correct label for each box.
@@ -32,6 +32,7 @@ def detect_objects(image_np, sess, image_tensor, boxes, scores, classes, num_det
         feed_dict={image_tensor: image_np_expanded})
 
     scores_squeezed = np.squeeze(scores)
+    print(scores_squeezed)
     for val in scores_squeezed:
         if val >= min_score_thresh:
             break
@@ -48,6 +49,7 @@ def detect_objects(image_np, sess, image_tensor, boxes, scores, classes, num_det
         use_normalized_coordinates=True,
         min_score_thresh=min_score_thresh,
         line_thickness=8)
+    print('D', end='')
     return True
 
 if __name__ == '__main__':
@@ -72,7 +74,7 @@ if __name__ == '__main__':
             tf.import_graph_def(od_graph_def, name='')
 
         sess = tf.Session(graph=detection_graph)
-
+    print('tensorflow init')
     image_tensor = detection_graph.get_tensor_by_name('image_tensor:0')
     # Each box represents a part of the image where a particular object was detected.
 
@@ -92,16 +94,21 @@ if __name__ == '__main__':
 
     while(1):
         ret, frame = video_capture.read()
+        print('.')
         if ret:
             frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             object_detected = detect_objects(frame_rgb, sess, image_tensor, boxes, scores, classes, num_detections, args.min_score_thresh)
 
             if object_detected:
+                print('slack')
                 cv2.imwrite("image.jpg", frame_rgb)
                 in_file = open("image.jpg", "rb") # opening for [r]eading as [b]inary
                 data = in_file.read()
-                sc.api_call("files.upload", filename="image.jpg", channels=args.slack_channel, file=data)
-
+                res = sc.api_call("files.upload", filename="image.jpg", channels="#eagle_eye", file=data)
+                print(res)
+        else:
+            video_capture.open(args.video_source)
+            print('video open')
         if 0xFF == ord('q'):
             break
     sess.close()
