@@ -1,4 +1,4 @@
-FROM johnnytshi/o_d:1.2.2
+FROM johnnytshi/o_d:1.2.3
 
 COPY src/app.py /root/
 

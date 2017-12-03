@@ -7,6 +7,7 @@ import cv2
 from collections import defaultdict
 from multiprocessing import Queue, Pool
 import time
+from imutils.video import FPS
 
 sys.path.append('/models/research/object_detection/')
 from utils import label_map_util
@@ -117,6 +118,8 @@ if __name__ == '__main__':
     detector_pool = Pool(2, detector_worker, (input_q, output_q, sess, image_tensor, boxes, scores, classes, num_detections, args.min_score_thresh))
     notifier_pool = Pool(1, notifier_worker, (output_q, sc))
 
+    fps = FPS().start()
+
     while(1):
         ret, frame = video_capture.read()
         if ret:
@@ -128,6 +131,9 @@ if __name__ == '__main__':
             video_capture.open(args.video_source)
         if 0xFF == ord('q'):
             break
+        fps.update()
+        print("[INFO] approx. FPS: {:.2f}".format(fps.fps()))
+    fps.stop()
     sess.close()
     detector_pool.terminate()
     notifier_pool.terminate()
