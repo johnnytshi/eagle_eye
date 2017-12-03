@@ -25,7 +25,7 @@ label_map = label_map_util.load_labelmap(PATH_TO_LABELS)
 categories = label_map_util.convert_label_map_to_categories(label_map, max_num_classes=NUM_CLASSES, use_display_name=True)
 category_index = label_map_util.create_category_index(categories)
 
-def detect_objects(image_np, sess, min_score_thresh):
+def detect_objects(image_np, sess, detection_graph, min_score_thresh):
     # Expand dimensions since the model expects images to have shape: [1, None, None, 3]
     image_np_expanded = np.expand_dims(image_np, axis=0)
 
@@ -82,7 +82,7 @@ def detector_worker(input_q, output_q, min_score_thresh):
     while True:
         frame = input_q.get()
         frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        object_detected = detect_objects(frame_rgb, sess, min_score_thresh)
+        object_detected = detect_objects(frame_rgb, sess, detection_graph, min_score_thresh)
         if object_detected:
             input_q.put(frame_rgb)
 
