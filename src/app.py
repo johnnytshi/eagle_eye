@@ -106,7 +106,7 @@ if __name__ == '__main__':
     scores = detection_graph.get_tensor_by_name('detection_scores:0')
     classes = detection_graph.get_tensor_by_name('detection_classes:0')
     num_detections = detection_graph.get_tensor_by_name('num_detections:0')
-
+    print('tensorflow init done')
     # init OpenCV
     video_capture = cv2.VideoCapture(args.video_source)
 
@@ -132,8 +132,9 @@ if __name__ == '__main__':
         if 0xFF == ord('q'):
             break
         fps.update()
-        print("[INFO] approx. FPS: {:.2f}".format(fps.fps()))
     fps.stop()
+    print('[INFO] elapsed time (total): {:.2f}'.format(fps.elapsed()))
+    print('[INFO] approx. FPS: {:.2f}'.format(fps.fps()))
     sess.close()
     detector_pool.terminate()
     notifier_pool.terminate()
