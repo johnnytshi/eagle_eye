@@ -46,7 +46,6 @@ def detect_objects(image_np, sess, detection_graph, min_score_thresh):
         feed_dict={image_tensor: image_np_expanded})
 
     scores_squeezed = np.squeeze(scores)
-    print(scores_squeezed)
     for val in scores_squeezed:
         if val >= min_score_thresh:
             break
@@ -63,7 +62,7 @@ def detect_objects(image_np, sess, detection_graph, min_score_thresh):
         use_normalized_coordinates=True,
         min_score_thresh=min_score_thresh,
         line_thickness=8)
-    print('D', end='')
+    print('detected')
     return True
 
 def detector_worker(input_q, output_q, min_score_thresh):
