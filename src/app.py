@@ -5,6 +5,8 @@ import tensorflow as tf
 import argparse
 import cv2
 from collections import defaultdict
+from multiprocessing import Queue, Pool
+import time
 
 sys.path.append('/models/research/object_detection/')
 from utils import label_map_util
@@ -52,6 +54,24 @@ def detect_objects(image_np, sess, image_tensor, boxes, scores, classes, num_det
     print('D', end='')
     return True
 
+def detector_worker(input_q, output_q, sess, image_tensor, boxes, scores, classes, num_detections, min_score_thresh):
+    while True:
+        frame = input_q.get()
+        frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        object_detected = detect_objects(frame_rgb, sess, image_tensor, boxes, scores, classes, num_detections, min_score_thresh)
+        if object_detected:
+            input_q.put(frame_rgb)
+
+def notifier_worker(output_q, sc):
+    while True:
+        frame_rgb = output_q.get()
+        print('slack')
+        cv2.imwrite("image.jpg", frame_rgb)
+        in_file = open("image.jpg", "rb") # opening for [r]eading as [b]inary
+        data = in_file.read()
+        res = sc.api_call("files.upload", filename="image.jpg", channels="#eagle_eye", file=data)
+        print(res)
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('-src', '--source', dest='video_source', type=str,
@@ -92,25 +112,24 @@ if __name__ == '__main__':
     # init Slack
     sc = SlackClient(args.slack_token)
 
+    input_q = Queue(maxsize=30)
+    output_q = Queue(maxsize=5)
+    detector_pool = Pool(2, detector_worker, (input_q, output_q, sess, image_tensor, boxes, scores, classes, num_detections, args.min_score_thresh))
+    notifier_pool = Pool(1, notifier_worker, (output_q, sc))
+
     while(1):
         ret, frame = video_capture.read()
-        print('.')
         if ret:
-            frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            object_detected = detect_objects(frame_rgb, sess, image_tensor, boxes, scores, classes, num_detections, args.min_score_thresh)
-
-            if object_detected:
-                print('slack')
-                cv2.imwrite("image.jpg", frame_rgb)
-                in_file = open("image.jpg", "rb") # opening for [r]eading as [b]inary
-                data = in_file.read()
-                res = sc.api_call("files.upload", filename="image.jpg", channels="#eagle_eye", file=data)
-                print(res)
+            print(input_q.qsize())
+            input_q.put(frame)
+            time.sleep(.1)
         else:
-            video_capture.open(args.video_source)
             print('video open')
+            video_capture.open(args.video_source)
         if 0xFF == ord('q'):
             break
     sess.close()
+    detector_pool.terminate()
+    notifier_pool.terminate()
     video_capture.stop()
     cv2.destroyAllWindows()
