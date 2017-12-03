@@ -120,6 +120,7 @@ if __name__ == '__main__':
     fps = FPS().start()
 
     while(1):
+        print(input_q.qsize())
         ret, frame = video_capture.read()
         if ret:
             print(input_q.qsize())
