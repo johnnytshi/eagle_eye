@@ -3,6 +3,10 @@ import sys
 from multiprocessing import Queue, Pool
 import cv2
 from slackclient import SlackClient
+import logging
+import argparse
+from imutils.video import FPS
+import time
 
 def detect_objects(sess, softmax_tensor, image_data, min_score_thresh):
     predictions = sess.run(softmax_tensor, \
@@ -66,7 +70,7 @@ if __name__ == '__main__':
     parser.add_argument('-min_score_thresh', '--min_score_thresh', dest='min_score_thresh', type=float,
                         default=0.5, help='percentage as min confidence score')
     parser.add_argument('-sleep_time', '--sleep_time', dest='sleep_time', type=float,
-                        default=0.3, help='sleep time between each frame')
+                        default=2.0, help='sleep time between each frame')
     args = parser.parse_args()
 
     input_q = Queue(maxsize=50)
